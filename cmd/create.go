@@ -3,8 +3,11 @@ package cmd
 import (
 	"fmt"
 	"log"
+	"os"
+	"path"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/ross96D/gohtmx-stack/output"
 	"github.com/ross96D/gohtmx-stack/program"
 	"github.com/spf13/cobra"
 )
@@ -22,6 +25,13 @@ type State struct {
 
 func create(cmd *cobra.Command, args []string) {
 	var state State
+	wd, err := os.Getwd()
+	if err != nil {
+		panic(err)
+	}
+	out := output.Output{
+		BasePath: path.Join(wd, "test_out"),
+	}
 	state.models = []tea.Model{
 		program.NewTextInput("gohtmx/test"),
 		program.Menu{
@@ -30,6 +40,7 @@ func create(cmd *cobra.Command, args []string) {
 					Text: "Use default htmx",
 					Action: func() error {
 						println("Copying default htmx")
+						out.DefaultHtmx = true
 						return nil
 					},
 				},
@@ -37,6 +48,7 @@ func create(cmd *cobra.Command, args []string) {
 					Text: "Download lastest version of htmx",
 					Action: func() error {
 						println("Downloading lastest version htmx")
+						out.DefaultHtmx = false
 						return nil
 					},
 				},
@@ -79,8 +91,9 @@ func create(cmd *cobra.Command, args []string) {
 				log.Fatal(err)
 			}
 		case program.TextInput:
-			state.proyectName = v.TextInput.Value()
+			out.ProyectName = v.TextInput.Value()
 			fmt.Println("Name of the proyect is", state.proyectName)
 		}
 	}
+	out.Build()
 }

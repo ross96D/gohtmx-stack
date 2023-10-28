@@ -48,8 +48,6 @@ func (m Menu) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "enter", "return", " ":
 			return m, tea.Quit
 		}
-	case int:
-
 	}
 	return m, nil
 }

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"path"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/ross96D/gohtmx-stack/output"
@@ -30,8 +29,9 @@ func create(cmd *cobra.Command, args []string) {
 		panic(err)
 	}
 	out := output.Output{
-		BasePath: path.Join(wd, "test_out"),
+		BasePath: wd,
 	}
+	println(out.BasePath)
 	state.models = []tea.Model{
 		program.NewTextInput("gohtmx/test"),
 		program.Menu{

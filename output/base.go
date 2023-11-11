@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"path"
 	"strings"
+	"sync"
 
 	"github.com/ross96D/gohtmx-stack/output/templates"
 )
@@ -21,10 +22,12 @@ type Output struct {
 func (o Output) Build() (err error) {
 	chanCheckTempl := make(chan any)
 	chanCheckCobra := make(chan any)
+	chanCheckAir := make(chan any)
 	chanBuildFirst := make(chan any)
 
 	go o.checkTempl(chanCheckTempl)
 	go o.checkCobra(chanCheckCobra)
+	go o.checkAir(chanCheckAir)
 	go o.buildFirst(chanBuildFirst)
 
 	v := <-chanCheckTempl
@@ -40,19 +43,31 @@ func (o Output) Build() (err error) {
 		return err
 	}
 
-	if err = o.cobraCliInit(); err != nil {
-		return
-	}
-	if err = o.goModTidy(); err != nil {
-		return
-	}
+	w := sync.WaitGroup{}
+	w.Add(1)
+	go func() {
+		defer w.Done()
+		if err = o.cobraCliInit(); err != nil {
+			return
+		}
+		if err = o.addServeCommand(); err != nil {
+			return
+		}
+		if err = o.goModTidy(); err != nil {
+			return
+		}
+	}()
 
 	if err = o.templateGenerate(); err != nil {
 		return
 	}
-	if err = o.addServeCommand(); err != nil {
+	if err = o.airInit(); err != nil {
 		return
 	}
+	if err = o.gitInit(); err != nil {
+		return
+	}
+	w.Wait()
 	return nil
 }
 
@@ -115,6 +130,23 @@ func (o Output) checkCobra(d chan any) {
 	}
 }
 
+func (o Output) checkAir(d chan any) {
+	var err error
+	defer func() {
+		if err != nil {
+			err = fmt.Errorf("installing Air %w", err)
+			d <- err
+		} else {
+			d <- true
+		}
+	}()
+	cmd := exec.Command("air", "-v")
+	err = cmd.Run()
+	if err != nil {
+		err = o.installAir()
+	}
+}
+
 func (o Output) installTempl() error {
 	println("Installing templ")
 	cmd := exec.Command("go", "install", "github.com/a-h/templ/cmd/templ@latest")
@@ -124,6 +156,12 @@ func (o Output) installTempl() error {
 func (o Output) installCobra() error {
 	println("Installing cobra-cli")
 	cmd := exec.Command("go", "install", "github.com/spf13/cobra-cli@latest")
+	return cmd.Run()
+}
+
+func (o Output) installAir() error {
+	println("Installing air")
+	cmd := exec.Command("go", "install", "github.com/cosmtrek/air@latest")
 	return cmd.Run()
 }
 
@@ -308,5 +346,26 @@ func (o Output) writeTailwind() (err error) {
 		return err
 	}
 
+	return err
+}
+
+func (o Output) airInit() error {
+	return exec.Command("air", "init").Run()
+}
+
+func (o Output) gitInit() error {
+	if err := o.writeGitIgnore(); err != nil {
+		return err
+	}
+	return exec.Command("git", "init").Run()
+}
+
+func (o Output) writeGitIgnore() error {
+	f1, err := os.Create(path.Join(o.BasePath, ".gitignore"))
+	if err != nil {
+		return err
+	}
+	defer f1.Close()
+	_, err = f1.WriteString(templates.Gitignore)
 	return err
 }

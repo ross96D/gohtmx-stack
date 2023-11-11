@@ -57,14 +57,12 @@ func (o Output) Build() (err error) {
 }
 
 func (o Output) addServeCommand() (err error) {
-	f, err := os.Open(path.Join(o.BasePath, "cmd", "root.go"))
+	f1, err := os.Open(path.Join(o.BasePath, "cmd", "root.go"))
 	if err != nil {
 		return err
 	}
-	defer func() {
-		f.Close()
-	}()
-	b, err := io.ReadAll(f)
+	defer f1.Close()
+	b, err := io.ReadAll(f1)
 	if err != nil {
 		return err
 	}
@@ -74,12 +72,12 @@ func (o Output) addServeCommand() (err error) {
 		`rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")`,
 		"rootCmd.Flags().BoolP(\"toggle\", \"t\", false, \"Help message for toggle\")\n\trootCmd.AddCommand(serveCommand)",
 	)
-	f.Close()
-	f, err = os.Create(path.Join(o.BasePath, "cmd", "root.go"))
+	f2, err := os.Create(path.Join(o.BasePath, "cmd", "root.go"))
 	if err != nil {
 		return err
 	}
-	_, err = f.WriteString(s)
+	defer f2.Close()
+	_, err = f2.WriteString(s)
 	return err
 }
 
@@ -146,39 +144,39 @@ func (o Output) buildFirst(d chan any) {
 	}
 }
 
-func (o *Output) crateStructure() error {
-	err := os.MkdirAll(path.Join(o.BasePath, "assets", "js"), fs.ModePerm)
-	if err != nil {
-		return err
+func (o *Output) crateStructure() (err error) {
+	if err = os.MkdirAll(path.Join(o.BasePath, "assets", "js"), fs.ModePerm); err != nil {
+		return
 	}
-	err = os.MkdirAll(path.Join(o.BasePath, "assets", "css"), fs.ModePerm)
-	if err != nil {
-		return err
+	if err = os.MkdirAll(path.Join(o.BasePath, "assets", "css"), fs.ModePerm); err != nil {
+		return
 	}
-	err = os.Mkdir(path.Join(o.BasePath, "handlers"), fs.ModePerm)
-	if err != nil {
-		return err
+	if err = os.Mkdir(path.Join(o.BasePath, "handlers"), fs.ModePerm); err != nil {
+		return
 	}
-	err = os.Mkdir(path.Join(o.BasePath, "shared"), fs.ModePerm)
-	if err != nil {
-		return err
+	if err = os.Mkdir(path.Join(o.BasePath, "shared"), fs.ModePerm); err != nil {
+		return
 	}
 
-	err = o.writeIndex()
-	if err != nil {
-		return err
+	if err = o.writeIndex(); err != nil {
+		return
 	}
 
-	err = o.htmx()
-	if err != nil {
-		return err
+	if err = o.htmx(); err != nil {
+		return
 	}
 
-	err = o.writeServer()
-	if err != nil {
-		return err
+	if err = o.writeServer(); err != nil {
+		return
 	}
 
+	if err = o.writePackageJson(); err != nil {
+		return
+	}
+
+	if err = o.writeTailwind(); err != nil {
+		return
+	}
 	return nil
 }
 
@@ -221,8 +219,7 @@ func (o *Output) htmx() error {
 }
 
 func (o *Output) writeIndex() error {
-	err := os.Mkdir(path.Join(o.BasePath, "views"), fs.ModePerm)
-	if err != nil {
+	if err := os.Mkdir(path.Join(o.BasePath, "views"), fs.ModePerm); err != nil {
 		return err
 	}
 	f, err := os.Create(path.Join(o.BasePath, "views", "index.templ"))
@@ -238,9 +235,7 @@ func (o *Output) writeIndex() error {
 }
 
 func (o *Output) writeServer() (err error) {
-	var f *os.File
 	defer func() {
-		f.Close()
 		if err != nil {
 			err = fmt.Errorf("write-server %w", err)
 		}
@@ -249,34 +244,69 @@ func (o *Output) writeServer() (err error) {
 	if err != nil {
 		return err
 	}
-	f, err = os.Create(path.Join(o.BasePath, "cmd", "serve.go"))
+	f1, err := os.Create(path.Join(o.BasePath, "cmd", "serve.go"))
 	if err != nil {
 		return err
 	}
-	_, err = f.WriteString(fmt.Sprintf(templates.Serve, o.ProyectName))
+	defer f1.Close()
+	_, err = f1.WriteString(fmt.Sprintf(templates.Serve, o.ProyectName))
 	if err != nil {
 		return err
 	}
-	f.Close()
 
-	f, err = os.Create(path.Join(o.BasePath, "handlers", "server.go"))
+	f2, err := os.Create(path.Join(o.BasePath, "handlers", "server.go"))
 	if err != nil {
 		return err
 	}
-	_, err = f.WriteString(templates.BaseServer)
+	defer f2.Close()
+	_, err = f2.WriteString(templates.BaseServer)
 	if err != nil {
 		return err
 	}
-	f.Close()
 
-	f, err = os.Create(path.Join(o.BasePath, "handlers", "index.go"))
+	f3, err := os.Create(path.Join(o.BasePath, "handlers", "index.go"))
 	if err != nil {
 		return err
 	}
-	_, err = f.WriteString(fmt.Sprintf(templates.Echo, o.ProyectName, o.ProyectName))
+	defer f3.Close()
+	_, err = f1.WriteString(fmt.Sprintf(templates.Echo, o.ProyectName, o.ProyectName))
 	if err != nil {
 		return err
 	}
-	f.Close()
 	return nil
+}
+
+func (o Output) writePackageJson() (err error) {
+	f, err := os.Create(path.Join(o.BasePath, "package.json"))
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	_, err = f.WriteString(templates.PackageJson)
+	return err
+}
+
+func (o Output) writeTailwind() (err error) {
+	f1, err := os.Create(path.Join(o.BasePath, "tailwind.config.js"))
+	if err != nil {
+		return err
+	}
+	defer f1.Close()
+
+	_, err = f1.WriteString(templates.TailwindConfig)
+	if err != nil {
+		return err
+	}
+
+	f2, err := os.Create(path.Join(o.BasePath, "views", "input.css"))
+	if err != nil {
+		return err
+	}
+	defer f2.Close()
+	_, err = f2.WriteString(templates.TailwindInput)
+	if err != nil {
+		return err
+	}
+
+	return err
 }

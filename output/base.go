@@ -61,6 +61,9 @@ func (o Output) addServeCommand() (err error) {
 	if err != nil {
 		return err
 	}
+	defer func() {
+		f.Close()
+	}()
 	b, err := io.ReadAll(f)
 	if err != nil {
 		return err

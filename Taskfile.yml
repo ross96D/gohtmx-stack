@@ -6,10 +6,9 @@ vars:
   GREETING: Hello, World!
 
 tasks:
-  default:
-    cmds:
-      - echo "{{.GREETING}}"
-    silent: true
   build:
     cmds:
-      - go build -o ./out/bin/ .
+      - go build -o ./out/bin/ght .
+  install:
+    cmds:
+      - task build && cp ./out/bin/ght ~/go/bin/

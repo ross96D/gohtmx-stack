@@ -2,10 +2,10 @@ package cmd
 
 import (
 	"fmt"
-	"log"
 	"os"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/ross96D/gohtmx-stack/cmd/download"
 	"github.com/ross96D/gohtmx-stack/output"
 	"github.com/ross96D/gohtmx-stack/program"
 	"github.com/spf13/cobra"
@@ -31,29 +31,28 @@ func create(cmd *cobra.Command, args []string) {
 	out := output.Output{
 		BasePath: wd,
 	}
-	println(out.BasePath)
 	state.models = []tea.Model{
 		program.NewTextInput("gohtmx/test"),
-		program.Menu{
-			Options: []program.MenuItem{
-				{
-					Text: "Use default htmx",
-					Action: func() error {
-						println("Copying default htmx")
-						out.DefaultHtmx = true
-						return nil
-					},
-				},
-				{
-					Text: "Download lastest version of htmx",
-					Action: func() error {
-						println("Downloading lastest version htmx")
-						out.DefaultHtmx = false
-						return nil
-					},
-				},
-			},
-		},
+		// program.Menu{
+		// 	Options: []program.MenuItem{
+		// 		{
+		// 			Text: "Use default htmx",
+		// 			Action: func() error {
+		// 				println("Copying default htmx")
+		// 				out.DefaultHtmx = true
+		// 				return nil
+		// 			},
+		// 		},
+		// 		{
+		// 			Text: "Download lastest version of htmx",
+		// 			Action: func() error {
+		// 				println("Downloading lastest version htmx")
+		// 				out.DefaultHtmx = false
+		// 				return nil
+		// 			},
+		// 		},
+		// 	},
+		// },
 		program.Menu{
 			Options: []program.MenuItem{
 				{
@@ -82,18 +81,27 @@ func create(cmd *cobra.Command, args []string) {
 		state.models[i] = m
 	}
 	println("Building proyect")
+	var htmx []byte
+	if htmx, err = download.LatestHtmx(); err != nil {
+		fmt.Printf("An error occur while downloading the latest version of htmx: %s\n", err.Error())
+		os.Exit(1)
+	}
+	out.Htmx = htmx
 	for i := 0; i < len(state.models); i++ {
 		m := state.models[i]
 		switch v := m.(type) {
 		case program.Menu:
 			err := v.Options[v.SelectedIndex].Action()
 			if err != nil {
-				log.Fatal(err)
+				fmt.Printf("An error happens on the action %s: %s", v.Options[v.SelectedIndex].Text, err.Error())
 			}
 		case program.TextInput:
 			out.ProyectName = v.TextInput.Value()
 			fmt.Println("Name of the proyect is", state.proyectName)
 		}
 	}
-	out.Build()
+	err = out.Build()
+	if err != nil {
+		fmt.Printf("Error building: %v", err)
+	}
 }

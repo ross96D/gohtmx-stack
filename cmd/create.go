@@ -53,24 +53,24 @@ func create(cmd *cobra.Command, args []string) {
 		// 		},
 		// 	},
 		// },
-		program.Menu{
-			Options: []program.MenuItem{
-				{
-					Text: "Use tailwind",
-					Action: func() error {
-						println("Adding to package-json tailwind")
-						return nil
-					},
-				},
-				{
-					Text: "Dont use tailwind",
-					Action: func() error {
-						println("Skipping tailwind")
-						return nil
-					},
-				},
-			},
-		},
+		// program.Menu{
+		// 	Options: []program.MenuItem{
+		// 		{
+		// 			Text: "Use tailwind",
+		// 			Action: func() error {
+		// 				println("Adding to package-json tailwind")
+		// 				return nil
+		// 			},
+		// 		},
+		// 		{
+		// 			Text: "Dont use tailwind",
+		// 			Action: func() error {
+		// 				println("Skipping tailwind")
+		// 				return nil
+		// 			},
+		// 		},
+		// 	},
+		// },
 	}
 	for i := 0; i < len(state.models); i++ {
 		p := tea.NewProgram(state.models[i])

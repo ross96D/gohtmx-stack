@@ -307,7 +307,7 @@ func (o *Output) writeServer() (err error) {
 		return err
 	}
 	defer f3.Close()
-	_, err = f1.WriteString(fmt.Sprintf(templates.Echo, o.ProyectName, o.ProyectName))
+	_, err = f3.WriteString(fmt.Sprintf(templates.Echo, o.ProyectName, o.ProyectName))
 	if err != nil {
 		return err
 	}

@@ -69,7 +69,7 @@ func (o Output) addServeCommand() (err error) {
 	s = strings.ReplaceAll(
 		s,
 		`rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")`,
-		"rootCmd.Flags().BoolP(\"toggle\", \"t\", false, \"Help message for toggle\")\nrootCmd.AddCommand(serveCommand)",
+		"rootCmd.Flags().BoolP(\"toggle\", \"t\", false, \"Help message for toggle\")\n\trootCmd.AddCommand(serveCommand)",
 	)
 	f.Close()
 	f, err = os.Create(path.Join(o.BasePath, "cmd", "root.go"))
